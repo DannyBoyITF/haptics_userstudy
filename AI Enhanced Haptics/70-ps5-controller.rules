@@ -1,0 +1,3 @@
+# DualSense controller rules
+KERNEL=="hidraw*", KERNELS=="*054C:0CE6*", MODE="0666"
+KERNEL=="hidraw*", KERNELS=="*054C:0B3D*", MODE="0666"
