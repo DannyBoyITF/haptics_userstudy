@@ -1,0 +1,87 @@
+% Load the data from the CSV files
+data_adaptive = readtable('subjective_adaptive.csv', 'Encoding', 'latin1');
+data_sound = readtable('subjective_sound.csv', 'Encoding', 'latin1');
+data_vibration = readtable('subjective_vibration.csv', 'Encoding', 'latin1');
+data_visual = readtable('subjective_visual.csv', 'Encoding', 'latin1');
+
+% Convert categorical data to binary format for analysis
+binary_conversion = @(x) strcmp(x, 'Yes');
+
+data_adaptive.Safe = binary_conversion(data_adaptive.IFeltSafeHandlingTheAdaptiveTrigger);
+data_adaptive.Control = binary_conversion(data_adaptive.IFeltThatIControlledTheAdaptiveTrigger);
+data_adaptive.Guidance = binary_conversion(data_adaptive.IFeltThatTheAdaptiveTriggerWasGuidingMe);
+
+data_sound.Safe = binary_conversion(data_sound.IFeltSafeUsingTheSoundFeedback);
+data_sound.Control = binary_conversion(data_sound.IFeltThatIControlledTheSoundFeedback);
+data_sound.Guidance = binary_conversion(data_sound.IFeltThatTheSoundFeedback_wasGuidingMe);
+
+data_vibration.Safe = binary_conversion(data_vibration.IFeltSafeHandlingTheVibrationFeedback);
+data_vibration.Control = binary_conversion(data_vibration.IFeltThatIControlledTheVibrationFeedback);
+data_vibration.Guidance = binary_conversion(data_vibration.IFeltThatTheVibrationFeedbackWasGuidingMe);
+
+data_visual.Safe = binary_conversion(data_visual.IFeltSafeUsingTheVisualFeedback);
+data_visual.Control = binary_conversion(data_visual.IFeltThatIControlledTheVisualFeedback);
+data_visual.Guidance = binary_conversion(data_visual.IFeltThatTheVisualFeedbackWasGuidingMe);
+
+% Extract Likert scale data
+comfort_adaptive = data_adaptive.OnAScaleOf1_5_HowWouldYouRateYourComfortLevel____1BeingVeryUnco;
+comfort_sound = data_sound.OnAScaleOf1_5_HowWouldYouRateYourComfortLevel____1BeingVeryUnco;
+comfort_vibration = data_vibration.OnAScaleOf1_5_HowWouldYouRateYourComfortLevel____1BeingVeryUnco;
+comfort_visual = data_visual.OnAScaleOf1_5_HowWouldYouRateYourComfortLevel____1BeingVeryUnco;
+
+confidence_adaptive = data_adaptive.OnAScaleOf1To5_HowConfidentDidYouFeelWhileOperatingTheSimulated;
+confidence_sound = data_sound.OnAScaleOf1To5_HowConfidentDidYouFeelWhileOperatingTheSimulated;
+confidence_vibration = data_vibration.OnAScaleOf1To5_HowConfidentDidYouFeelWhileOperatingTheSimulated;
+confidence_visual = data_visual.OnAScaleOf1To5_HowConfidentDidYouFeelWhileOperatingTheSimulated;
+
+
+% Descriptive Statistics
+% Frequency counts for binary responses
+freq_safe = [sum(data_adaptive.Safe), sum(data_sound.Safe), sum(data_vibration.Safe), sum(data_visual.Safe)];
+freq_control = [sum(data_adaptive.Control), sum(data_sound.Control), sum(data_vibration.Control), sum(data_visual.Control)];
+freq_guidance = [sum(data_adaptive.Guidance), sum(data_sound.Guidance), sum(data_vibration.Guidance), sum(data_visual.Guidance)];
+
+% Mean and standard deviation for Likert scale responses
+mean_comfort = [mean(comfort_adaptive), mean(comfort_sound), mean(comfort_vibration), mean(comfort_visual)];
+std_comfort = [std(comfort_adaptive), std(comfort_sound), std(comfort_vibration), std(comfort_visual)];
+mean_confidence = [mean(confidence_adaptive), mean(confidence_sound), mean(confidence_vibration), mean(confidence_visual)];
+std_confidence = [std(confidence_adaptive), std(confidence_sound), std(confidence_vibration), std(confidence_visual)];
+
+% Chi-Square Test for independence
+tbl_safe = [freq_safe; 10 - freq_safe]';
+[tbl, chi2stat, pValue_safe] = crosstab(tbl_safe(:, 1), tbl_safe(:, 2));
+
+% ANOVA for Likert scale responses
+comfort = [comfort_adaptive; comfort_sound; comfort_vibration; comfort_visual];
+group_comfort = [repmat({'Adaptive'}, length(comfort_adaptive), 1); repmat({'Sound'}, length(comfort_sound), 1); repmat({'Vibration'}, length(comfort_vibration), 1); repmat({'Visual'}, length(comfort_visual), 1)];
+[p_comfort, tbl_comfort, stats_comfort] = anova1(comfort, group_comfort);
+
+confidence = [confidence_adaptive; confidence_sound; confidence_vibration; confidence_visual];
+group_confidence = [repmat({'Adaptive'}, length(confidence_adaptive), 1); repmat({'Sound'}, length(confidence_sound), 1); repmat({'Vibration'}, length(confidence_vibration), 1); repmat({'Visual'}, length(confidence_visual), 1)];
+[p_confidence, tbl_confidence, stats_confidence] = anova1(confidence, group_confidence);
+
+% Post-hoc test
+multcompare(stats_comfort);
+multcompare(stats_confidence);
+
+% Visual Representation
+% Bar graph for binary responses
+figure;
+bar(freq_safe);
+set(gca, 'XTickLabel', {'Adaptive', 'Sound', 'Vibration', 'Visual'});
+xlabel('Feedback Type');
+ylabel('Frequency of Yes Responses');
+title('Safety Perception Across Feedback Types');
+
+% Box plot for Likert scale responses
+figure;
+boxplot(comfort, group_comfort);
+xlabel('Feedback Type');
+ylabel('Comfort Rating');
+title('Comfort Ratings Across Feedback Types');
+
+figure;
+boxplot(confidence, group_confidence);
+xlabel('Feedback Type');
+ylabel('Confidence Rating');
+title('Confidence Ratings Across Feedback Types');
